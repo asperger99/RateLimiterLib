@@ -25,11 +25,11 @@ public class RateLimiterFactory: IRateLimiterFactory
         switch ((policy.RateLimiterType, policy.StoreType))
         {
             case (RateLimiterType.FixedWindow, RateLimitStoreType.InMemory):
-                return new FixedWindowCounter(policy.Limit, policy.WindowSize);
+                return new FixedWindowCounter(policy.Limits, policy.DefaultLimit, policy.WindowSize);
             case (RateLimiterType.TokenBucket, RateLimitStoreType.InMemory):
-                return new TokenBucketRateLimiter(policy.Limit, policy.WindowSize);
+                return new TokenBucketRateLimiter(policy.Limits, policy.DefaultLimit, policy.WindowSize);
             default:
-                return new FixedWindowCounter(policy.Limit, policy.WindowSize);
+                return new FixedWindowCounter(policy.Limits, policy.DefaultLimit, policy.WindowSize);
         }
     }
 }

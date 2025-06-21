@@ -5,22 +5,36 @@ namespace RateLimiter.RateLimitStrategies.TokenBucket;
 
 public class TokenBucketRateLimiter: IRateLimiter
 {
-    private readonly int _bucketCapaciy;
-    private readonly int _tokenPerSecond;
+    private readonly Dictionary<string, int> _bucketCapacities;
+    private readonly TimeSpan _windowSize;
     private readonly ConcurrentDictionary<string, TokenBucket> _buckets = new();
+    private readonly int _defaultLimit;
 
-    public TokenBucketRateLimiter(int limit, TimeSpan windowSize)
+    public TokenBucketRateLimiter(Dictionary<string, int> limits, int defaultLimit, TimeSpan windowSize)
     {
-        _bucketCapaciy = limit;
-        _tokenPerSecond = Convert.ToInt32(limit/windowSize.TotalSeconds);
+        _bucketCapacities = limits;
+        _windowSize = windowSize;
+        _defaultLimit = defaultLimit;
     }
     
     public bool AllowRequest(string key)
     {
-        var bucket = _buckets.GetOrAdd(key, _ => new TokenBucket(_bucketCapaciy, _tokenPerSecond));
+        int bucketCapacity = _bucketCapacities.GetValueOrDefault(key, _defaultLimit);
+        var bucket = _buckets.GetOrAdd(key, _ => new TokenBucket(bucketCapacity, Convert.ToInt32(bucketCapacity/ _windowSize.TotalSeconds)));
         lock (bucket)
         {
             return bucket.TryConsumeToken();
         }
+    }
+    public int GetCurrentRequestCount(string key)
+    {
+        if (_buckets.TryGetValue(key, out var bucket))
+        {
+            lock (bucket)
+            {
+                return bucket.GetCurrentCount();
+            }
+        }
+        return 0;
     }
 }

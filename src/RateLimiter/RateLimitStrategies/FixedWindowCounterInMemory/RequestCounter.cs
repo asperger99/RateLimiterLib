@@ -28,4 +28,13 @@ public class RequestCounter
 
         return false;
     }
+    public int GetCurrentCount()
+    {
+        if (DateTime.UtcNow - _windowStart > _windowSize)
+        {
+            _windowStart = DateTime.UtcNow;
+            _count = 0;
+        }
+        return _count;
+    }
 }

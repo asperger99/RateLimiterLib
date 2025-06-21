@@ -4,5 +4,6 @@ public enum RateLimitKeyType
 {
     Ip,
     UserId,
+    Api,
     CustomHeader
 }

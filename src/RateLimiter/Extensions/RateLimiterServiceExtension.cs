@@ -7,9 +7,10 @@ namespace RateLimiter.Extensions;
 
 public static class RateLimiterServiceExtension
 {
-    public static IServiceCollection AddRateLimiter(this IServiceCollection services)
+    public static IServiceCollection AddRateLimiter(this IServiceCollection services, RateLimitPolicy policy)
     {
         services.AddSingleton<IRateLimiterFactory, RateLimiterFactory>();
+        services.AddSingleton(policy);
         return services;
     }
 }
