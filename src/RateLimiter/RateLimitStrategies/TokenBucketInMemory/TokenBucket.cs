@@ -28,4 +28,12 @@ public class TokenBucket
         }
         return false;
     }
+    public int GetCurrentCount()
+    {
+        var now = DateTime.UtcNow;
+        var secondsElapsed = Convert.ToInt32((now - _lastFilled).TotalSeconds);
+        _tokenCount = Math.Min(_capacity, _tokenCount + secondsElapsed * _tokenPerSecond);
+        _lastFilled = now;
+        return _tokenCount;
+    }
 }
