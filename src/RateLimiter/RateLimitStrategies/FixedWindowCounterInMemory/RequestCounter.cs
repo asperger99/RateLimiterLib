@@ -37,4 +37,14 @@ public class RequestCounter
         }
         return _count;
     }
+
+    public int GetRetryAfterSecondsAsync()
+    {
+        if (DateTime.UtcNow - _windowStart > _windowSize)
+        {
+            return 0;
+        }
+        var remainingTimeInCurrentWindow = _windowSize - (DateTime.UtcNow - _windowStart);
+        return remainingTimeInCurrentWindow.Seconds;
+    }
 }

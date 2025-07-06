@@ -16,27 +16,39 @@ public class FixedWindowCounter: IRateLimiter
         _limits = limits;
         _defaultLimit = defaultLimit;
     }
-    public bool AllowRequest(string key)
+    public Task<bool> AllowRequestAsync(string key)
     {
         var counter = _counters.GetOrAdd(key, _ => new RequestCounter(_windowSize));
-        if (_limits.TryGetValue(key, out var limit))
+        if (!_limits.TryGetValue(key, out var limit))
         {
             limit = _defaultLimit;
         }
         lock (counter)
         {
-            return counter.TryIncrement(limit);
+            return Task.FromResult(counter.TryIncrement(limit));
         }
     }
-    public int GetCurrentRequestCount(string key)
+    public Task<int> GetCurrentRequestCountAsync(string key)
     {
         if (_counters.TryGetValue(key, out var counter))
         {
             lock (counter)
             {
-                return counter.GetCurrentCount();
+                return Task.FromResult(counter.GetCurrentCount());
             }
         }
-        return 0;
+        return Task.FromResult(0);
+    }
+
+    public Task<int> GetRetryAfterSecondsAsync(string key)
+    {
+        if (_counters.TryGetValue(key, out var counter))
+        {
+            lock (counter)
+            {
+                return Task.FromResult(counter.GetRetryAfterSecondsAsync());
+            }
+        }
+        return Task.FromResult(0);
     }
 }

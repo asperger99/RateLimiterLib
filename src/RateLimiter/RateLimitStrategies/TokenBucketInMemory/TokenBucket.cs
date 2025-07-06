@@ -36,4 +36,18 @@ public class TokenBucket
         _lastFilled = now;
         return _tokenCount;
     }
+    
+    public int GetRetryAfterSecondsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var secondsElapsed = Convert.ToInt32((now - _lastFilled).TotalSeconds);
+        _tokenCount = Math.Min(_capacity, _tokenCount + secondsElapsed * _tokenPerSecond);
+        _lastFilled = now;
+
+        if (_tokenCount > 0)
+        {
+            return 0; // No need to wait
+        }
+        return Convert.ToInt32(Math.Ceiling((double)(1.0 / _tokenPerSecond)));
+    }
 }

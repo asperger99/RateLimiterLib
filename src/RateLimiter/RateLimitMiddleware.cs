@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
 using RateLimiter.Interfaces;
 using RateLimiter.Models.RateLimitPolicies;
 using RateLimiter.Utils;
@@ -15,6 +14,7 @@ public class RateLimitMiddleware
 
     public RateLimitMiddleware(RequestDelegate next, IRateLimiterFactory factory, RateLimitPolicy policy)
     {
+        ValidatePolicy(policy);
         _next = next;
         _rateLimiter = factory.GetOrCreateRateLimiter("global", policy);
         _policy = policy;
@@ -30,21 +30,21 @@ public class RateLimitMiddleware
                 await WriteMissingKeyResponse(context, key);
                 return;
             }
-
-            if (!_rateLimiter.AllowRequest(key))
+            bool isRequestAllowed = await _rateLimiter.AllowRequestAsync(key);
+            if (!isRequestAllowed)
             {
-                WriteResponse(context, key);
+                await WriteResponse(context, key);
                 return;
             }
 
             await _next(context);
         } catch (Exception ex)
         {
+            // Log the exception
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync($"{{\"error\": \"An unexpected error occurred: {ex.Message}\"}}");
         }
-        
     }
 
     private string GetRateLimitKey(HttpContext context)
@@ -67,14 +67,16 @@ public class RateLimitMiddleware
         }
     }
 
-    private void WriteResponse(HttpContext context, string key)
+    private async Task WriteResponse(HttpContext context, string key)
     {
-        var remainingRequests = _policy.Limits[key] - _rateLimiter.GetCurrentRequestCount(key);
+        var remainingRequests = await GetRemainingRequestsAsync(key);
+        var retryAfterSeconds = await _rateLimiter.GetRetryAfterSecondsAsync(key);
         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Response.ContentType = "application/json";
         context.Response.Headers.Append("X-RateLimit-Limit", _policy.Limits[key].ToString());
         context.Response.Headers.Append("X-RateLimit-Remaining", remainingRequests.ToString());
-        context.Response.WriteAsync(KeyStore.RateLimitErrorMessage);
+        context.Response.Headers.Append("X-RateLimit-Retry-After", retryAfterSeconds.ToString());
+        await context.Response.WriteAsync(KeyStore.RateLimitErrorMessage);
     }
 
     private string GetCustomHeaderName()
@@ -86,9 +88,35 @@ public class RateLimitMiddleware
     {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
         context.Response.ContentType = "application/json";
-        context.Response.Headers.Append("X-RateLimit-Limit", _policy.Limits[key].ToString());
-        context.Response.Headers.Append("X-RateLimit-Remaining", "0");
         await context.Response.WriteAsync("{\"error\": \"Required rate limit key is missing in the request.\"}");
+    }
+
+    private async Task<int> GetRemainingRequestsAsync(string key)
+    {
+        var currentCount = await _rateLimiter.GetCurrentRequestCountAsync(key);
+        switch (_policy.RateLimiterType)
+        {
+            case RateLimiterType.TokenBucket:
+                return currentCount;
+            default:
+                return _policy.Limits[key] - currentCount;
+        }
+    }
+    private void ValidatePolicy(RateLimitPolicy policy)
+    {
+        if (policy == null)
+            throw new ArgumentNullException(nameof(policy));
+        if (policy.DefaultLimit <= 0)
+            throw new ArgumentException("DefaultLimit must be greater than zero.");
+        if (policy.WindowSize <= TimeSpan.Zero)
+            throw new ArgumentException("WindowSize must be greater than zero.");
+        if (policy.KeyType == RateLimitKeyType.CustomHeader && string.IsNullOrWhiteSpace(policy.CustomHeaderName))
+            throw new ArgumentException("CustomHeaderName must be set for CustomHeader KeyType.");
+        foreach (var kv in policy.Limits)
+        {
+            if (kv.Value <= 0)
+                throw new ArgumentException($"Limit for key '{kv.Key}' must be greater than zero.");
+        }
     }
 }
 
@@ -97,3 +125,6 @@ public class RateLimitMiddleware
     //X-RateLimit-Limit: The maximum number of requests allowed in the current window.
     //X-RateLimit-Remaining: The number of requests left in the current window.
     //X-RateLimit-Reset: The time (usually as a Unix timestamp or seconds) when the rate limit window resets.
+    
+    //TODO:
+    // 1. Add support for logging and monitoring

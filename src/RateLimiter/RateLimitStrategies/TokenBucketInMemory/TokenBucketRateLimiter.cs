@@ -17,24 +17,36 @@ public class TokenBucketRateLimiter: IRateLimiter
         _defaultLimit = defaultLimit;
     }
     
-    public bool AllowRequest(string key)
+    public Task<bool> AllowRequestAsync(string key)
     {
         int bucketCapacity = _bucketCapacities.GetValueOrDefault(key, _defaultLimit);
         var bucket = _buckets.GetOrAdd(key, _ => new TokenBucket(bucketCapacity, Convert.ToInt32(bucketCapacity/ _windowSize.TotalSeconds)));
         lock (bucket)
         {
-            return bucket.TryConsumeToken();
+            return Task.FromResult(bucket.TryConsumeToken());
         }
     }
-    public int GetCurrentRequestCount(string key)
+    public Task<int> GetCurrentRequestCountAsync(string key)
     {
         if (_buckets.TryGetValue(key, out var bucket))
         {
             lock (bucket)
             {
-                return bucket.GetCurrentCount();
+                return Task.FromResult(bucket.GetCurrentCount());
             }
         }
-        return 0;
+        return Task.FromResult(0);
+    }
+
+    public Task<int> GetRetryAfterSecondsAsync(string key)
+    {
+        if (_buckets.TryGetValue(key, out var bucket))
+        {
+            lock (bucket)
+            {
+                return Task.FromResult(bucket.GetRetryAfterSecondsAsync());
+            }
+        }
+        return Task.FromResult(0);
     }
 }
