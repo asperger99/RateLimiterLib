@@ -2,7 +2,7 @@
 
 Production-ready .NET library for API Rate Limiting with Redis support for distributed systems, configurable limits and policies, and extensible architecture for custom implementations.
 
-## 🚀 Features
+## Features
 
 - **Redis Support** - Distributed rate limiting for multi-instance deployments
 - **Configurable Limits & Policies** - Flexible configuration for different rate limiting scenarios
@@ -11,13 +11,13 @@ Production-ready .NET library for API Rate Limiting with Redis support for distr
 - **Extensible Architecture** - Easy to add custom rate limiting strategies
 - **Production-Ready** - Built for enterprise applications
 
-## 📦 Installation
+## Installation
 
 ```bash
 dotnet add package RateLimiterLib
 ```
 
-## 🎯 Quick Start
+## Quick Start
 
 Add to your ASP.NET Core application:
 
@@ -32,7 +32,7 @@ services.AddRateLimiter(options => {
 app.UseRateLimitMiddleware();
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 src/RateLimiter/
@@ -46,7 +46,7 @@ src/RateLimiter/
 └── Utils/                   # Utility functions
 ```
 
-## 💡 Usage Examples
+## Usage Examples
 
 ### Basic Rate Limiting
 ```csharp
@@ -78,27 +78,22 @@ var policies = new RateLimitPolicies
 };
 ```
 
-## 🛠️ Technologies
+## Technologies
 
 - **.NET Core** - Cross-platform framework
 - **C#** - Modern programming language
 - **Redis** - Distributed caching
 - **ASP.NET Core** - Web framework integration
 
-## 📋 Requirements
+## Requirements
 
 - .NET Core 3.1 or higher
 - Redis (for distributed rate limiting)
 - ASP.NET Core 3.1 or higher
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
 
-## 📄 License
-
-MIT License - feel free to use this in your projects
-
----
 
 **Created by**: [@asperger99](https://github.com/asperger99)
