@@ -10,7 +10,9 @@ An api rate limiter library developed using .NET Core.
 - **Extensible architecture** for custom implementations
 
 ## Installation
+dotnet add package RateLimiterLib
 
+## Quick Start
 // Add to Startup.cs or Program.cs
 services.AddRateLimiter(options => {
     options.RateLimit = 100; // requests per minute
