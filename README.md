@@ -1,6 +1,6 @@
 # RateLimiterLib
 
-Production-ready .NET library for API Rate Limiting with Redis support for distributed systems, configurable limits and policies, and extensible architecture for custom implementations.
+.NET library for API Rate Limiting with Redis support for distributed systems, configurable limits and policies, and extensible architecture for custom implementations.
 
 ## Features
 
